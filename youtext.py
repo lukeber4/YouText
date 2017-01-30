@@ -8,15 +8,16 @@ import sys
 def get_transcript_url(video):
     r = requests.get(video)
     soup = BeautifulSoup(r.content, "lxml")
+    title = soup.find("meta", itemprop="name")["content"]
     for i in soup.body.findAll(text=re.compile('TTS_URL'))[0].split('\n'):
         if 'TTS_URL' in i:
             TTS_URL = i.split('"')[1].replace('\\', '').replace('u0026', '&')
-            return TTS_URL
+            return TTS_URL, title
     return False
 
 
 def get_transcript(video):
-    url = get_transcript_url(video)
+    url, title = get_transcript_url(video)
     extra = "&kind&fmt=srv1&lang=en"
     extra2 = "&kind=asr&fmt=srv1&lang=en"
     if url:
@@ -24,8 +25,11 @@ def get_transcript(video):
         if len(r.text) == 0:
             r = requests.get(url+extra2)
         soup2 = BeautifulSoup(r.content, "lxml")
-        for line in soup2.text.replace("&#39;", "'").replace('&#39;', "'").replace('&gt;', '>').split("\n"):
-            print(line)
+        if soup2:
+            print("Transcription of '{}'".format(title))
+            print("-------")
+            for line in soup2.text.replace("&#39;", "'").replace('&#39;', "'").replace('&gt;', '>').split("\n"):
+                print(line)
     else:
         print('No subtitles available. Sorry.')
 
